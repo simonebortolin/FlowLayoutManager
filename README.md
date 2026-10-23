@@ -1,32 +1,42 @@
 # FlowLayoutManager
+
+[![CI](https://github.com/simonebortolin/FlowLayoutManager/actions/workflows/ci.yml/badge.svg)](https://github.com/simonebortolin/FlowLayoutManager/actions/workflows/ci.yml)
 [![](https://jitpack.io/v/simonebortolin/FlowLayoutManager.svg)](https://jitpack.io/#simonebortolin/FlowLayoutManager)
+[![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg)](https://developer.android.com/about/versions/lollipop)
 
 Android 3rd party library to make implementing a FlowLayoutManager
 
-FlowLayoutManager is a layoutManager that works with Android ___RecyclerView___ Widget, to layout views in flow style, with support of ___predictive animations___, item per line limit, auto measurement & alignments (left or right)
+FlowLayoutManager is a layoutManager that works with Android ___RecyclerView___ Widget, to layout views in flow style, with support of ___predictive animations___, item per line limit, auto measurement & alignments (left, center or right). Supports min SDK 21.
 
 ## Screenshots
-<img src="https://github.com/simonebortolin/FlowLayoutManager/blob/master/image_1.png" alt="" width="200px"></a>
-<img src="https://github.com/simonebortolin/FlowLayoutManager/blob/master/image_2.png" alt="" width="200px"></a>
-<img src="https://github.com/simonebortolin/FlowLayoutManager/blob/master/image_3.png" alt="" width="200px"></a>
+<img src="art/screenshot_1.png" alt="" width="200px">
+<img src="art/screenshot_2.png" alt="" width="200px">
+<img src="art/screenshot_3.png" alt="" width="200px">
 
 ## Installation
 
 
-Step 1. Add it in your **root** build.gradle at the end of repositories:
+Add remote maven url (in `settings.gradle`)
 
-	allprojects {
-		repositories {
-			...
-			maven { url 'https://jitpack.io' }
-		}
-	}
+```groovy
+    dependencyResolutionManagement {
+        repositories {
+            google()
+            mavenCentral()
+            maven { url "https://jitpack.io" }
+        }
+    }
+```
 
-Step 2. Add the dependency
+Every release also ships the `.aar` and the sample app `.apk` on the [Releases page](https://github.com/simonebortolin/FlowLayoutManager/releases).
 
-	dependencies {
-	        implementation 'com.github.simonebortolin:FlowLayoutManager:1.8.0'
-	}
+Now add a library dependency (remember to check for latest release)
+
+```groovy
+    dependencies {
+        implementation 'com.github.simonebortolin:FlowLayoutManager:1.9.0'
+    }
+```
 
 Item per line limitation
 ---
@@ -84,7 +94,24 @@ Alignment could be LEFT, CENTER or RIGHT.
 ## Credits
 
 
-I thank all the authors of the various commits that I have included in my fork
+I thank all the authors of the various commits that I have included in my fork, in particular:
+
+* [xiaofeng-han/AndroidLibs](https://github.com/xiaofeng-han/AndroidLibs), the original library
+* [hees-k](https://github.com/hees-k/FlowLayoutManager) and [idindevelop](https://github.com/idindevelop/FlowLayoutManager) for the build updates
+
+## Build
+
+The project builds with Gradle 9 / AGP 9 and JDK 17:
+
+```bash
+./gradlew :flowlayoutmanager:testDebugUnitTest :flowlayoutmanager:assembleRelease :app:assembleDebug
+```
+
+Unit tests run on the JVM with [Robolectric](https://robolectric.org), so no emulator is needed; they need JDK 21 for the latest Android SDK. CI runs them on the lowest Android SDK Robolectric supports (23) and on the latest one (37), and builds the library only when they pass.
+
+`minSdk` is set once by `MIN_SDK` in `gradle.properties` for both the library and the sample app, and it is kept as low as the dependencies allow: the sample uses only framework widgets and RecyclerView for this reason. A dependency update that requires a higher `minSdk` makes the build fail (manifest merger), so it never raises it silently.
+
+CI builds the library AAR and the sample APK on every pull request; on `master` it also tags and releases the version set by `VERSION_NAME` in `gradle.properties` (bump it to release).
 
 
 ## License
