@@ -53,6 +53,15 @@
             android:layout_weight="1"
             android:drawableTop="@drawable/ic_format_align_right_black_24dp"
             android:text="@string/right" />
+
+        <Button
+            android:id="@+id/navigation_max_lines"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableTop="@drawable/ic_short_text_black_24dp"
+            android:text="@string/max_lines" />
     </LinearLayout>
 
 </LinearLayout>

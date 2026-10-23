@@ -6,7 +6,7 @@
 
 Android 3rd party library to make implementing a FlowLayoutManager
 
-FlowLayoutManager is a layoutManager that works with Android ___RecyclerView___ Widget, to layout views in flow style, with support of ___predictive animations___, item per line limit, auto measurement & alignments (left, center or right). Supports min SDK 21.
+FlowLayoutManager is a layoutManager that works with Android ___RecyclerView___ Widget, to layout views in flow style, with support of ___predictive animations___, item per line limit, max lines limit, auto measurement & alignments (left, center or right). Supports min SDK 21.
 
 ## Screenshots
 <img src="art/screenshot_1.png" alt="" width="200px">
@@ -67,6 +67,26 @@ to remove Item per line limitation
 (recyclerView.getLayoutManager() as FlowLayoutManager).removeItemPerLineLimit()
 ```
 
+Max lines limitation
+---
+Show at most x lines, the items that do not fit are not laid out
+```java
+recyclerView.setLayoutManager(new FlowLayoutManager().maxLines(x));
+```
+
+```kotlin
+recyclerView.setLayoutManager(FlowLayoutManager().maxLines(x))
+```
+
+to remove max lines limitation
+```java
+((FlowLayoutManager)recyclerView.getLayoutManager()).removeMaxLinesLimit();
+```
+
+```kotlin
+(recyclerView.getLayoutManager() as FlowLayoutManager).removeMaxLinesLimit()
+```
+
 Auto measurement
 ---
 ```java
@@ -97,6 +117,7 @@ Alignment could be LEFT, CENTER or RIGHT.
 I thank all the authors of the various commits that I have included in my fork, in particular:
 
 * [xiaofeng-han/AndroidLibs](https://github.com/xiaofeng-han/AndroidLibs), the original library
+* [davidleen](https://github.com/davidleen/FlowLayoutManager) for the max lines limit
 * [hees-k](https://github.com/hees-k/FlowLayoutManager) and [idindevelop](https://github.com/idindevelop/FlowLayoutManager) for the build updates
 
 ## Build

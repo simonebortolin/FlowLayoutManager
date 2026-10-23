@@ -19,6 +19,8 @@ import java.util.Objects;
  */
 public class MainActivity extends Activity {
 
+    private static final int DEMO_MAX_LINES = 3;
+
     RecyclerView recyclerView;
     FlowLayoutManager flowLayoutManager;
     RecyclerView.ItemDecoration itemDecoration = new RecyclerView.ItemDecoration() {
@@ -45,6 +47,8 @@ public class MainActivity extends Activity {
                 setLayoutManager(new FlowLayoutManager().setAlignment(Alignment.CENTER)));
         findViewById(R.id.navigation_right).setOnClickListener(v ->
                 setLayoutManager(new FlowLayoutManager().setAlignment(Alignment.RIGHT)));
+        findViewById(R.id.navigation_max_lines).setOnClickListener(v ->
+                setLayoutManager(new FlowLayoutManager().setAlignment(Alignment.LEFT).maxLines(DEMO_MAX_LINES)));
     }
 
     private void setLayoutManager(FlowLayoutManager layoutManager) {

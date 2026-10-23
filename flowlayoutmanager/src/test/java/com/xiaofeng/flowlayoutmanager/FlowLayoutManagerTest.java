@@ -46,7 +46,7 @@ public class FlowLayoutManagerTest {
 		attach(new FlowLayoutManager().setAlignment(Alignment.LEFT), LIST_HEIGHT);
 
 		assertThat("8 visible lines of 3 items", recyclerView.getChildCount(), is(24));
-		assertThat(recyclerView.canScrollVertically(1), is(true));
+		assertThat(layoutManager().canScrollVertically(1), is(true));
 	}
 
 	@Test
@@ -55,6 +55,43 @@ public class FlowLayoutManagerTest {
 
 		assertThat("8 visible lines of 2 items", recyclerView.getChildCount(), is(16));
 		assertThat("3rd item starts the 2nd line", recyclerView.getChildAt(2).getTop(), is(ITEM_HEIGHT));
+	}
+
+	@Test
+	public void maxLinesLimitsLaidOutItems() {
+		attach(new FlowLayoutManager().setAlignment(Alignment.LEFT).maxLines(2), LIST_HEIGHT);
+
+		assertThat("2 lines of 3 items", recyclerView.getChildCount(), is(6));
+		assertThat(lastChildAdapterPosition(), is(5));
+		assertThat(layoutManager().canScrollVertically(1), is(false));
+	}
+
+	@Test
+	public void maxLinesDoesNotScrollPastLimit() {
+		attach(new FlowLayoutManager().setAlignment(Alignment.LEFT).maxLines(10), 3 * ITEM_HEIGHT);
+
+		recyclerView.scrollBy(0, 100 * ITEM_HEIGHT);
+		idle();
+
+		assertThat("scrolled to the 10th line", lastChildAdapterPosition(), is(29));
+
+		attach(new FlowLayoutManager().setAlignment(Alignment.LEFT).maxLines(5), 3 * ITEM_HEIGHT);
+		recyclerView.scrollBy(0, 100 * ITEM_HEIGHT);
+		idle();
+
+		assertThat("last item of the 5th line", lastChildAdapterPosition(), is(14));
+		assertThat(layoutManager().canScrollVertically(1), is(false));
+	}
+
+	@Test
+	public void removeMaxLinesLimit() {
+		FlowLayoutManager layoutManager = new FlowLayoutManager().setAlignment(Alignment.LEFT).maxLines(1);
+		attach(layoutManager, LIST_HEIGHT);
+		assertThat(recyclerView.getChildCount(), is(3));
+
+		layoutManager.removeMaxLinesLimit();
+		idle();
+		assertThat(recyclerView.getChildCount(), is(24));
 	}
 
 	@Test
@@ -83,6 +120,11 @@ public class FlowLayoutManagerTest {
 				View.MeasureSpec.makeMeasureSpec(10 * LIST_HEIGHT, View.MeasureSpec.AT_MOST));
 		root.layout(0, 0, root.getMeasuredWidth(), root.getMeasuredHeight());
 		shadowOf(Looper.getMainLooper()).idle();
+	}
+
+	// FlowLayoutManager's own check: RecyclerView.canScrollVertically uses the scrollbar metrics instead.
+	private FlowLayoutManager layoutManager() {
+		return (FlowLayoutManager) recyclerView.getLayoutManager();
 	}
 
 	private int lastChildAdapterPosition() {
