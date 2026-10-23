@@ -1,39 +1,58 @@
-// to publish run ./gradlew clean bintrayUpload
+plugins {
+    alias(libs.plugins.android.library)
+    id 'maven-publish'
+}
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
+group = 'com.github.simonebortolin'
+version = VERSION_NAME
 
 android {
-    compileSdkVersion androidCompileSdkVersion
-
-    buildToolsVersion buildToolsVersion
+    namespace = 'com.xiaofeng.flowlayoutmanager'
+    compileSdk = 37
 
     defaultConfig {
-        minSdkVersion androidMinSdkVersion
-        targetSdkVersion androidTargetSdkVersion
-        versionCode versionCode
-        versionName versionName
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        minSdk = MIN_SDK as int
     }
+
     testOptions {
-        unitTests.returnDefaultValues = false
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        // Unit tests run on the JVM with Robolectric, no emulator needed.
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            // Robolectric reaches FileDescriptor internals (java.io fields and
+            // jdk.internal.access.SharedSecrets), closed by default on JDK 17+.
+            jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED',
+                    '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED'
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
     }
 }
 
 dependencies {
-    implementation(group: 'androidx.appcompat', name: 'appcompat', version: supportLibVersion)
-    implementation(group: 'androidx.recyclerview', name: 'recyclerview', version: supportLibVersion)
+    // FlowLayoutManager extends RecyclerView.LayoutManager, so RecyclerView is part of the public API.
+    api libs.androidx.recyclerview
+
+    testImplementation libs.junit
+    testImplementation libs.androidx.test.ext.junit
+    testImplementation libs.robolectric
 }
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                artifactId = 'FlowLayoutManager'
+            }
+        }
+    }
+}
