@@ -182,7 +182,8 @@ jobs:
           ./gradlew \
             :flowlayoutmanager:assembleRelease \
             :flowlayoutmanager:publishToMavenLocal \
-            :flowlayoutmanager:publishReleasePublicationToStagingRepository \
+            :flowlayoutmanager:publishReleasePublicationToCentralRepository \
+            :flowlayoutmanager:publishGithubPublicationToGithubRepository \
             :app:assembleDebug \
             :app:assembleRelease
 
@@ -209,8 +210,8 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-      # Maven repository layout (AAR, sources, javadoc, POM and signatures),
-      # published as is to GitHub Packages and Maven Central
+      # Maven repository layouts (AAR, sources, javadoc, POM and signatures),
+      # published as is to Maven Central (central/) and GitHub Packages (github/)
       - name: Upload Maven artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -319,7 +320,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd maven
+          cd maven/github
           { find . -type f ! -name 'maven-metadata.xml*' | sort; find . -type f -name 'maven-metadata.xml*' | sort; } > "$RUNNER_TEMP/files"
           while read -r FILE; do
             echo "Uploading ${FILE#./}"
@@ -351,13 +352,13 @@ jobs:
             echo "::warning::MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_PASSWORD not configured - skip Maven Central"
             exit 0
           fi
-          if ! find maven -name '*.asc' | grep -q .; then
+          if ! find maven/central -name '*.asc' | grep -q .; then
             echo "::error::Maven artifacts are not signed - configure SIGNING_KEY and SIGNING_PASSWORD"
             exit 1
           fi
 
           # Maven Central manages maven-metadata.xml itself
-          (cd maven && zip -qr "$RUNNER_TEMP/bundle.zip" . -x '*maven-metadata.xml*')
+          (cd maven/central && zip -qr "$RUNNER_TEMP/bundle.zip" . -x '*maven-metadata.xml*')
           AUTH="Authorization: Bearer $(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 -w0)"
           DEPLOYMENT=$(curl --fail-with-body -sS -H "$AUTH" -F "bundle=@$RUNNER_TEMP/bundle.zip" \
             "https://central.sonatype.com/api/v1/publisher/upload?name=${{ github.event.repository.name }}-$VERSION&publishingType=AUTOMATIC")

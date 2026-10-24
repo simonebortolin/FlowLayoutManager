@@ -54,46 +54,54 @@ dependencies {
 afterEvaluate {
     publishing {
         publications {
-            release(MavenPublication) {
-                from components.release
-                artifactId = 'FlowLayoutManager'
+            // Same library, GitHub Packages does not accept uppercase letters in the artifactId
+            [release: 'FlowLayoutManager', github: 'flowlayoutmanager'].each { publicationName, publicationArtifactId ->
+                create(publicationName, MavenPublication) {
+                    from components.release
+                    artifactId = publicationArtifactId
 
-                // Metadata required by Maven Central
-                pom {
-                    name = 'FlowLayoutManager'
-                    description = 'A RecyclerView LayoutManager that lays out views in flow style.'
-                    url = 'https://github.com/simonebortolin/FlowLayoutManager'
-                    licenses {
-                        license {
-                            name = 'GNU General Public License v3.0'
-                            url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = 'simonebortolin'
-                            name = 'Simone Bortolin'
-                            url = 'https://github.com/simonebortolin'
-                        }
-                    }
-                    scm {
+                    // Metadata required by Maven Central
+                    pom {
+                        name = 'FlowLayoutManager'
+                        description = 'A RecyclerView LayoutManager that lays out views in flow style.'
                         url = 'https://github.com/simonebortolin/FlowLayoutManager'
-                        connection = 'scm:git:https://github.com/simonebortolin/FlowLayoutManager.git'
-                        developerConnection = 'scm:git:ssh://git@github.com/simonebortolin/FlowLayoutManager.git'
+                        licenses {
+                            license {
+                                name = 'GNU General Public License v3.0'
+                                url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                            }
+                        }
+                        developers {
+                            developer {
+                                id = 'simonebortolin'
+                                name = 'Simone Bortolin'
+                                url = 'https://github.com/simonebortolin'
+                            }
+                        }
+                        scm {
+                            url = 'https://github.com/simonebortolin/FlowLayoutManager'
+                            connection = 'scm:git:https://github.com/simonebortolin/FlowLayoutManager.git'
+                            developerConnection = 'scm:git:ssh://git@github.com/simonebortolin/FlowLayoutManager.git'
+                        }
                     }
                 }
             }
         }
         repositories {
-            // Maven layout that CI uploads to GitHub Packages and Maven Central
+            // Maven layouts that CI uploads to Maven Central and GitHub Packages
             maven {
-                name = 'staging'
-                url = layout.buildDirectory.dir('staging-deploy')
+                name = 'central'
+                url = layout.buildDirectory.dir('staging-deploy/central')
+            }
+            maven {
+                name = 'github'
+                url = layout.buildDirectory.dir('staging-deploy/github')
             }
         }
     }
 
-    // Signed only when CI provides the key (ORG_GRADLE_PROJECT_signingKey and signingPassword)
+    // Signed only when CI provides the key (ORG_GRADLE_PROJECT_signingKey and signingPassword),
+    // GitHub Packages does not need the signatures
     def signingKey = findProperty('signingKey')
     if (signingKey) {
         signing {
