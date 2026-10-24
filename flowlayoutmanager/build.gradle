@@ -1,9 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     id 'maven-publish'
+    id 'signing'
 }
 
-group = 'com.github.simonebortolin'
+// Maven Central and GitHub Packages serve the library as io.github.simonebortolin,
+// JitPack (which sets JITPACK) as com.github.simonebortolin.
+group = System.getenv('JITPACK') ? 'com.github.simonebortolin' : 'io.github.simonebortolin'
 version = VERSION_NAME
 
 android {
@@ -33,6 +36,8 @@ android {
     publishing {
         singleVariant('release') {
             withSourcesJar()
+            // Required by Maven Central
+            withJavadocJar()
         }
     }
 }
@@ -52,7 +57,48 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.release
                 artifactId = 'FlowLayoutManager'
+
+                // Metadata required by Maven Central
+                pom {
+                    name = 'FlowLayoutManager'
+                    description = 'A RecyclerView LayoutManager that lays out views in flow style.'
+                    url = 'https://github.com/simonebortolin/FlowLayoutManager'
+                    licenses {
+                        license {
+                            name = 'GNU General Public License v3.0'
+                            url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'simonebortolin'
+                            name = 'Simone Bortolin'
+                            url = 'https://github.com/simonebortolin'
+                        }
+                    }
+                    scm {
+                        url = 'https://github.com/simonebortolin/FlowLayoutManager'
+                        connection = 'scm:git:https://github.com/simonebortolin/FlowLayoutManager.git'
+                        developerConnection = 'scm:git:ssh://git@github.com/simonebortolin/FlowLayoutManager.git'
+                    }
+                }
             }
+        }
+        repositories {
+            // Maven layout that CI uploads to GitHub Packages and Maven Central
+            maven {
+                name = 'staging'
+                url = layout.buildDirectory.dir('staging-deploy')
+            }
+        }
+    }
+
+    // Signed only when CI provides the key (ORG_GRADLE_PROJECT_signingKey and signingPassword)
+    def signingKey = findProperty('signingKey')
+    if (signingKey) {
+        signing {
+            useInMemoryPgpKeys(signingKey, findProperty('signingPassword'))
+            sign publishing.publications.release
         }
     }
 }

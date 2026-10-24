@@ -22,6 +22,7 @@ env:
   TEST_JAVA_VERSION: '21'
 
 # Stages: Resolve Version -> Test (lowest and latest Android SDK) -> Build library & sample app -> Tag & Release
+# -> Publish to GitHub Packages and Maven Central
 # The Test report job publishes the JUnit results of every SDK, also when the tests fail.
 # Every stage must succeed for the next one to start.
 jobs:
@@ -166,10 +167,15 @@ jobs:
           echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build
+        env:
+          # Sign the Maven artifacts outside pull requests, when a key is configured
+          ORG_GRADLE_PROJECT_signingKey: ${{ github.event_name != 'pull_request' && secrets.SIGNING_KEY || '' }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           ./gradlew \
             :flowlayoutmanager:assembleRelease \
             :flowlayoutmanager:publishToMavenLocal \
+            :flowlayoutmanager:publishReleasePublicationToStagingRepository \
             :app:assembleDebug \
             :app:assembleRelease
 
@@ -196,6 +202,15 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+      # Maven repository layout (AAR, sources, javadoc, POM and signatures),
+      # published as is to GitHub Packages and Maven Central
+      - name: Upload Maven artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: maven-${{ env.VERSION }}
+          path: flowlayoutmanager/build/staging-deploy/
+          if-no-files-found: error
+
   release:
     name: Tag & Release
     runs-on: ubuntu-latest
@@ -218,6 +233,12 @@ jobs:
           name: flowlayoutmanager-${{ env.VERSION }}
           path: release
 
+      - name: Download Maven artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: maven-${{ env.VERSION }}
+          path: maven
+
       - name: Checksums
         run: |
           cd release
@@ -227,7 +248,7 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'release/*.aar, release/*.apk'
+          subject-path: 'release/*.aar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
 
       - name: Tag release
         id: tag
@@ -267,3 +288,91 @@ jobs:
             -f state="$STATE" \
             -f description="$DESCRIPTION" \
             -f context="release"
+
+  publish-github:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    needs: [version, release]
+    if: needs.version.outputs.tag_exists != 'true'
+    permissions:
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Download Maven artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: maven-${{ env.VERSION }}
+          path: maven
+
+      # Same files attested in the release job, uploaded as Gradle does:
+      # artifacts first, maven-metadata.xml last.
+      - name: Upload to GitHub Packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd maven
+          { find . -type f ! -name 'maven-metadata.xml*' | sort; find . -type f -name 'maven-metadata.xml*' | sort; } > "$RUNNER_TEMP/files"
+          while read -r FILE; do
+            echo "Uploading ${FILE#./}"
+            curl --fail-with-body -sS -u "${{ github.actor }}:$GH_TOKEN" --upload-file "$FILE" \
+              "https://maven.pkg.github.com/${{ github.repository }}/${FILE#./}"
+          done < "$RUNNER_TEMP/files"
+
+  publish-central:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    needs: [version, release]
+    if: needs.version.outputs.tag_exists != 'true'
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+
+    steps:
+      - name: Download Maven artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: maven-${{ env.VERSION }}
+          path: maven
+
+      # Central Portal API: https://central.sonatype.org/publish/publish-portal-api/
+      - name: Upload to Maven Central
+        run: |
+          if [ -z "$CENTRAL_USERNAME" ] || [ -z "$CENTRAL_PASSWORD" ]; then
+            echo "::warning::MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_PASSWORD not configured - skip Maven Central"
+            exit 0
+          fi
+          if ! find maven -name '*.asc' | grep -q .; then
+            echo "::error::Maven artifacts are not signed - configure SIGNING_KEY and SIGNING_PASSWORD"
+            exit 1
+          fi
+
+          # Maven Central manages maven-metadata.xml itself
+          (cd maven && zip -qr "$RUNNER_TEMP/bundle.zip" . -x '*maven-metadata.xml*')
+          AUTH="Authorization: Bearer $(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 -w0)"
+          DEPLOYMENT=$(curl --fail-with-body -sS -H "$AUTH" -F "bundle=@$RUNNER_TEMP/bundle.zip" \
+            "https://central.sonatype.com/api/v1/publisher/upload?name=${{ github.event.repository.name }}-$VERSION&publishingType=AUTOMATIC")
+          echo "Deployment $DEPLOYMENT"
+
+          # Wait for the validation, the publication itself can take a while longer
+          for _ in $(seq 60); do
+            STATUS=$(curl --fail-with-body -sS -X POST -H "$AUTH" "https://central.sonatype.com/api/v1/publisher/status?id=$DEPLOYMENT")
+            STATE=$(echo "$STATUS" | jq -r .deploymentState)
+            echo "State: $STATE"
+            case "$STATE" in
+              PUBLISHING|PUBLISHED)
+                echo "### Maven Central: \`$STATE\`" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+                ;;
+              FAILED)
+                echo "$STATUS" | jq .
+                echo "::error::Maven Central rejected the deployment $DEPLOYMENT"
+                exit 1
+                ;;
+            esac
+            sleep 20
+          done
+          echo "::error::Maven Central did not validate the deployment $DEPLOYMENT in time"
+          exit 1
