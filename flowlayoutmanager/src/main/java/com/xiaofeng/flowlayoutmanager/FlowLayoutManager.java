@@ -17,8 +17,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Layout manager for flow views. support different view height, support item add/removed notification
- * support align to left/right edge. support scroll/smooth scroll.
+ * A {@link RecyclerView.LayoutManager} that lays out items in flow style: items are placed in a
+ * line until it is full, then a new line starts, like words in a paragraph.
+ *
+ * <p>Items can have different sizes. It supports predictive item animations, scroll and smooth
+ * scroll, auto measurement, left, right or center alignment ({@link #setAlignment(Alignment)}),
+ * a limit of items per line ({@link #maxItemsPerLine(int)}, {@link #singleItemPerLine()}) and a
+ * limit of lines ({@link #maxLines(int)}).
+ *
+ * <pre>{@code
+ * recyclerView.setLayoutManager(new FlowLayoutManager()
+ *         .setAlignment(Alignment.LEFT)
+ *         .maxItemsPerLine(3));
+ * }</pre>
  */
 public class FlowLayoutManager extends RecyclerView.LayoutManager {
 
@@ -38,11 +49,16 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
     // number of items that fit in the first maxLines lines, refreshed on every real layout.
     private int maxLinesItemCount = Integer.MAX_VALUE;
 
+    /**
+     * Creates a layout manager with centered lines and no limits.
+     */
     public FlowLayoutManager() {
         flowLayoutOptions = new FlowLayoutOptions();
     }
 
     /**
+     * Creates a layout manager with centered lines that shows at most {@code maxLines} lines.
+     *
      * @param maxLines max number of lines to show, &lt;= 0 to show all lines.
      */
     public FlowLayoutManager(int maxLines) {
@@ -671,6 +687,10 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
         return ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewAdapterPosition();
     }
 
+    /**
+     * @param child a child view of the RecyclerView
+     * @return the layout position of {@code child}
+     */
     public int getChildLayoutPosition(View child) {
         return ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewLayoutPosition();
     }
@@ -766,11 +786,22 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
         return ((RecyclerView.LayoutParams) child.getLayoutParams()).isItemRemoved();
     }
 
+    /**
+     * Sets the alignment of the items in each line, {@link Alignment#CENTER} by default.
+     *
+     * @param alignment the alignment
+     * @return this layout manager
+     */
     public FlowLayoutManager setAlignment(Alignment alignment) {
         flowLayoutOptions.alignment = alignment;
         return this;
     }
 
+    /**
+     * Puts each item in its own line, same as {@code maxItemsPerLine(1)}.
+     *
+     * @return this layout manager
+     */
     public FlowLayoutManager singleItemPerLine() {
         flowLayoutOptions.itemsPerLine = 1;
 
@@ -783,6 +814,12 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
         return this;
     }
 
+    /**
+     * Puts at most {@code itemsPerLine} items in each line.
+     *
+     * @param itemsPerLine max number of items in a line, &lt;= 0 for no limit
+     * @return this layout manager
+     */
     public FlowLayoutManager maxItemsPerLine(int itemsPerLine) {
         flowLayoutOptions.itemsPerLine = itemsPerLine;
 
@@ -796,7 +833,10 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
     }
 
     /**
-     * Show at most maxLines lines, items after the last line are not laid out.
+     * Shows at most {@code maxLines} lines, items after the last line are not laid out.
+     *
+     * @param maxLines max number of lines to show, &lt;= 0 to show all lines
+     * @return this layout manager
      */
     public FlowLayoutManager maxLines(int maxLines) {
         flowLayoutOptions.maxLines = maxLines;
@@ -804,6 +844,11 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
         return this;
     }
 
+    /**
+     * Shows all lines, removing the limit set with {@link #maxLines(int)}.
+     *
+     * @return this layout manager
+     */
     public FlowLayoutManager removeMaxLinesLimit() {
         return maxLines(FlowLayoutOptions.MAX_LINES_NO_LIMIT);
     }
@@ -856,6 +901,12 @@ public class FlowLayoutManager extends RecyclerView.LayoutManager {
         return itemCount;
     }
 
+    /**
+     * Puts as many items in a line as fit, removing the limit set with
+     * {@link #maxItemsPerLine(int)} or {@link #singleItemPerLine()}.
+     *
+     * @return this layout manager
+     */
     public FlowLayoutManager removeItemPerLineLimit() {
         flowLayoutOptions.itemsPerLine = FlowLayoutOptions.ITEM_PER_LINE_NO_LIMIT;
 

@@ -5,9 +5,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.View;
 
 /**
- * Created by Anton Dudakov (dude.bw@gmail.com) on 04/10/16.
+ * A view measured in a line, laid out once the line is complete so that it can be shifted
+ * for {@link Alignment#CENTER}. Used internally by {@link FlowLayoutManager}.
+ *
+ * @author Anton Dudakov
  */
-
 public class LayoutManagerAppender {
 
     View mView;
