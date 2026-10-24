@@ -28,7 +28,9 @@ It is also available on [JitPack](https://jitpack.io/#simonebortolin/FlowLayoutM
 (add `maven { url "https://jitpack.io" }` to the repositories in `settings.gradle`) and on
 [GitHub Packages](https://github.com/simonebortolin/FlowLayoutManager/packages) as `io.github.simonebortolin:flowlayoutmanager`, which requires a GitHub token to download.
 
-Every release also ships the `.aar` and the sample app `.apk`, with their build provenance attestation,
+The Javadoc of the latest release is on [GitHub Pages](https://simonebortolin.github.io/FlowLayoutManager/).
+
+Every release also ships the `.aar`, the Javadoc `.jar` and the sample app `.apk`, with their build provenance attestation,
 on the [Releases page](https://github.com/simonebortolin/FlowLayoutManager/releases).
 
 Item per line limitation
