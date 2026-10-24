@@ -20,15 +20,17 @@ The library is published on Maven Central, add the dependency (remember to check
 
 ```groovy
     dependencies {
-        implementation 'io.github.simonebortolin:FlowLayoutManager:1.10.0'
+        implementation 'io.github.simonebortolin:FlowLayoutManager:1.10.1'
     }
 ```
 
 It is also available on [JitPack](https://jitpack.io/#simonebortolin/FlowLayoutManager) as `com.github.simonebortolin:FlowLayoutManager`
 (add `maven { url "https://jitpack.io" }` to the repositories in `settings.gradle`) and on
-[GitHub Packages](https://github.com/simonebortolin/FlowLayoutManager/packages), which requires a GitHub token to download.
+[GitHub Packages](https://github.com/simonebortolin/FlowLayoutManager/packages) as `io.github.simonebortolin:flowlayoutmanager`, which requires a GitHub token to download.
 
-Every release also ships the `.aar` and the sample app `.apk`, with their build provenance attestation,
+The Javadoc of the latest release is on [GitHub Pages](https://simonebortolin.github.io/FlowLayoutManager/).
+
+Every release also ships the `.aar`, the Javadoc `.jar` and the sample app `.apk`, with their build provenance attestation,
 on the [Releases page](https://github.com/simonebortolin/FlowLayoutManager/releases).
 
 Item per line limitation

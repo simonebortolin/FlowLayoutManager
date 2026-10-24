@@ -29,7 +29,7 @@ env:
   TEST_JAVA_VERSION: '21'
 
 # Stages: Resolve Version -> Test (lowest and latest Android SDK) -> Build library & sample app -> Tag & Release
-# -> Publish to GitHub Packages and Maven Central
+# -> Publish to GitHub Packages and Maven Central, Javadoc to GitHub Pages
 # The Test report job publishes the JUnit results of every SDK, also when the tests fail.
 # Every stage must succeed for the next one to start.
 jobs:
@@ -182,7 +182,8 @@ jobs:
           ./gradlew \
             :flowlayoutmanager:assembleRelease \
             :flowlayoutmanager:publishToMavenLocal \
-            :flowlayoutmanager:publishReleasePublicationToStagingRepository \
+            :flowlayoutmanager:publishReleasePublicationToCentralRepository \
+            :flowlayoutmanager:publishGithubPublicationToGithubRepository \
             :app:assembleDebug \
             :app:assembleRelease
 
@@ -190,6 +191,8 @@ jobs:
         run: |
           mkdir -p dist
           cp flowlayoutmanager/build/outputs/aar/flowlayoutmanager-release.aar "dist/FlowLayoutManager-${VERSION}.aar"
+          cp "flowlayoutmanager/build/staging-deploy/central/io/github/simonebortolin/FlowLayoutManager/${VERSION}/FlowLayoutManager-${VERSION}-javadoc.jar" \
+            "dist/FlowLayoutManager-${VERSION}-javadoc.jar"
 
           # Signed release APK when a keystore is configured, debug APK otherwise
           # (an unsigned APK cannot be installed).
@@ -209,8 +212,8 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-      # Maven repository layout (AAR, sources, javadoc, POM and signatures),
-      # published as is to GitHub Packages and Maven Central
+      # Maven repository layouts (AAR, sources, javadoc, POM and signatures),
+      # published as is to Maven Central (central/) and GitHub Packages (github/)
       - name: Upload Maven artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -255,7 +258,7 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'release/*.aar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
+          subject-path: 'release/*.aar, release/*.jar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
 
       - name: Tag release
         id: tag
@@ -296,6 +299,43 @@ jobs:
             -f description="$DESCRIPTION" \
             -f context="release"
 
+  pages:
+    name: Publish Javadoc to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [version, release]
+    if: needs.version.outputs.tag_exists != 'true'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: flowlayoutmanager-${{ env.VERSION }}
+          path: release
+
+      # Same Javadoc jar shipped with the release and on Maven Central
+      - name: Extract Javadoc
+        run: |
+          mkdir site
+          unzip -q "release/FlowLayoutManager-${VERSION}-javadoc.jar" -d site
+          rm -rf site/META-INF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   publish-github:
     name: Publish to GitHub Packages
     runs-on: ubuntu-latest
@@ -319,7 +359,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd maven
+          cd maven/github
           { find . -type f ! -name 'maven-metadata.xml*' | sort; find . -type f -name 'maven-metadata.xml*' | sort; } > "$RUNNER_TEMP/files"
           while read -r FILE; do
             echo "Uploading ${FILE#./}"
@@ -351,13 +391,13 @@ jobs:
             echo "::warning::MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_PASSWORD not configured - skip Maven Central"
             exit 0
           fi
-          if ! find maven -name '*.asc' | grep -q .; then
+          if ! find maven/central -name '*.asc' | grep -q .; then
             echo "::error::Maven artifacts are not signed - configure SIGNING_KEY and SIGNING_PASSWORD"
             exit 1
           fi
 
           # Maven Central manages maven-metadata.xml itself
-          (cd maven && zip -qr "$RUNNER_TEMP/bundle.zip" . -x '*maven-metadata.xml*')
+          (cd maven/central && zip -qr "$RUNNER_TEMP/bundle.zip" . -x '*maven-metadata.xml*')
           AUTH="Authorization: Bearer $(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 -w0)"
           DEPLOYMENT=$(curl --fail-with-body -sS -H "$AUTH" -F "bundle=@$RUNNER_TEMP/bundle.zip" \
             "https://central.sonatype.com/api/v1/publisher/upload?name=${{ github.event.repository.name }}-$VERSION&publishingType=AUTOMATIC")
