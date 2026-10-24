@@ -1,6 +1,7 @@
 # FlowLayoutManager
 
 [![CI](https://github.com/simonebortolin/FlowLayoutManager/actions/workflows/ci.yml/badge.svg)](https://github.com/simonebortolin/FlowLayoutManager/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.simonebortolin/FlowLayoutManager)](https://central.sonatype.com/artifact/io.github.simonebortolin/FlowLayoutManager)
 [![](https://jitpack.io/v/simonebortolin/FlowLayoutManager.svg)](https://jitpack.io/#simonebortolin/FlowLayoutManager)
 [![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg)](https://developer.android.com/about/versions/lollipop)
 
@@ -15,28 +16,20 @@ FlowLayoutManager is a layoutManager that works with Android ___RecyclerView___ 
 
 ## Installation
 
-
-Add remote maven url (in `settings.gradle`)
-
-```groovy
-    dependencyResolutionManagement {
-        repositories {
-            google()
-            mavenCentral()
-            maven { url "https://jitpack.io" }
-        }
-    }
-```
-
-Every release also ships the `.aar` and the sample app `.apk` on the [Releases page](https://github.com/simonebortolin/FlowLayoutManager/releases).
-
-Now add a library dependency (remember to check for latest release)
+The library is published on Maven Central, add the dependency (remember to check for latest release)
 
 ```groovy
     dependencies {
-        implementation 'com.github.simonebortolin:FlowLayoutManager:1.9.0'
+        implementation 'io.github.simonebortolin:FlowLayoutManager:1.10.0'
     }
 ```
+
+It is also available on [JitPack](https://jitpack.io/#simonebortolin/FlowLayoutManager) as `com.github.simonebortolin:FlowLayoutManager`
+(add `maven { url "https://jitpack.io" }` to the repositories in `settings.gradle`) and on
+[GitHub Packages](https://github.com/simonebortolin/FlowLayoutManager/packages), which requires a GitHub token to download.
+
+Every release also ships the `.aar` and the sample app `.apk`, with their build provenance attestation,
+on the [Releases page](https://github.com/simonebortolin/FlowLayoutManager/releases).
 
 Item per line limitation
 ---
