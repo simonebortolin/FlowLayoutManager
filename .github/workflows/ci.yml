@@ -4,9 +4,16 @@ on:
   push:
     branches:
       - master
+    # Documentation only changes (README, badges, screenshots) do not need a build or a release
+    paths-ignore:
+      - '**.md'
+      - 'art/**'
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**.md'
+      - 'art/**'
   workflow_dispatch: # Allows manual trigger of the workflow
 
 permissions:
