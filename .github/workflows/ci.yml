@@ -255,11 +255,18 @@ jobs:
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
 
-      # The Javadoc jar of the release is the one in maven/, a subject can appear only once
+      # A digest can appear only once: the GitHub Packages layout and the release
+      # Javadoc jar share their files with the Maven Central layout.
+      - name: Collect attestation subjects
+        run: |
+          find release maven -type f \( -name '*.aar' -o -name '*.apk' -o -name '*.jar' -o -name '*.pom' \) -exec sha256sum {} + \
+            | awk '{ name = $2; sub(/.*\//, "", name); if (!seen[$1]++) print $1 "  " name }' > "$RUNNER_TEMP/subjects"
+          cat "$RUNNER_TEMP/subjects"
+
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'release/*.aar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
+          subject-checksums: ${{ runner.temp }}/subjects
 
       - name: Tag release
         id: tag
