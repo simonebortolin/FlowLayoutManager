@@ -255,10 +255,11 @@ jobs:
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
 
+      # The Javadoc jar of the release is the one in maven/, a subject can appear only once
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'release/*.aar, release/*.jar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
+          subject-path: 'release/*.aar, release/*.apk, maven/**/*.aar, maven/**/*.jar, maven/**/*.pom'
 
       - name: Tag release
         id: tag
