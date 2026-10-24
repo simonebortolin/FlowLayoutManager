@@ -4,8 +4,9 @@ import android.graphics.Point;
 import android.util.SparseArray;
 
 /**
- * A Helper class that will save Line information (items count, total width etc.) and will be used
- * for layout, that will avoid low efficiency layout
+ * Cache of the item sizes and of the resulting lines (item count, total width etc.), so that
+ * {@link com.xiaofeng.flowlayoutmanager.FlowLayoutManager} does not have to lay out every item
+ * from the beginning when scrolling. Used internally by the layout manager.
  */
 public class CacheHelper {
 	public static final int NOT_FOUND = -1;

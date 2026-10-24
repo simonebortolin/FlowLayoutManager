@@ -1,7 +1,10 @@
 package com.xiaofeng.flowlayoutmanager;
 
 /**
- * Created by xhan on 4/11/16.
+ * State of a layout pass: the layout options and the number of items already placed in the
+ * current line. Used internally by {@link FlowLayoutManager}.
+ *
+ * @author xhan
  */
 public class LayoutContext {
 	public FlowLayoutOptions layoutOptions;

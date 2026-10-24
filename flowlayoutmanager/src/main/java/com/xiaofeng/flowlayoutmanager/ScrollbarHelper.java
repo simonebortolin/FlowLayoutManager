@@ -16,16 +16,14 @@
 
 package com.xiaofeng.flowlayoutmanager;
 
-/**
- * Created by Anton Dudakov (dude.bw@gmail.com) on 13/10/16.
- */
-
 import androidx.recyclerview.widget.OrientationHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.View;
 
 /**
  * A helper class to do scroll offset calculations.
+ *
+ * @author Anton Dudakov
  */
 class ScrollbarHelper {
 

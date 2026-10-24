@@ -4,7 +4,10 @@ import android.graphics.Point;
 import androidx.recyclerview.widget.RecyclerView;
 
 /**
- * Created by xhan on 4/11/16.
+ * Geometry helpers of the visible area and of the line breaking rules. Used internally by
+ * {@link FlowLayoutManager}.
+ *
+ * @author xhan
  */
 public class LayoutHelper {
 	RecyclerView.LayoutManager layoutManager;

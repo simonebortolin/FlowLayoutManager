@@ -1,7 +1,9 @@
 package com.xiaofeng.flowlayoutmanager.cache;
 
 /**
- * Created by xhan on 4/28/16.
+ * Cached information of a laid out line: item count, total width and tallest item.
+ *
+ * @author xhan
  */
 public class Line {
 	public int itemCount;
