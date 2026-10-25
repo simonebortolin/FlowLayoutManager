@@ -287,14 +287,20 @@ jobs:
           generate_release_notes: true
           files: release/*
 
+      # A push that does not release on purpose (build, CI or docs changes) carries
+      # [no-new-version] in a commit message: report success instead of a pending status.
       - name: Report release status
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, ' ') }}
         run: |
-          if [ "${{ needs.version.outputs.tag_exists }}" = "true" ]; then
+          if [ "${{ needs.version.outputs.tag_exists }}" = "true" ] && printf '%s' "$COMMIT_MESSAGES" | grep -qF '[no-new-version]'; then
+            STATE=success
+            DESCRIPTION="Version $VERSION kept on purpose ([no-new-version]) - nothing to release."
+          elif [ "${{ needs.version.outputs.tag_exists }}" = "true" ]; then
             STATE=pending
-            DESCRIPTION="Version $VERSION already released - bump VERSION_NAME in gradle.properties."
+            DESCRIPTION="Version $VERSION already released - bump VERSION_NAME in gradle.properties, or add [no-new-version] to the commit message."
           elif [ "${{ steps.gh_release.outcome }}" = "success" ]; then
             STATE=success
             DESCRIPTION="Released $VERSION with library AAR and sample APK."
