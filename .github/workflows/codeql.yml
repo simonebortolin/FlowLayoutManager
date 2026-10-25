@@ -21,7 +21,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  JAVA_VERSION: '17'
+  # Same JDK as the Test job in ci.yml, which builds the unit tests (Robolectric needs JDK 21)
+  JAVA_VERSION: '21'
 
 jobs:
   analyze:
@@ -36,9 +37,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Built with Gradle so that the AndroidX dependencies are resolved
+          # Built with Gradle so that the AndroidX dependencies are resolved; manual rather than
+          # autobuild, whose `assemble` leaves the unit tests out of the scan
           - language: java-kotlin
-            build-mode: autobuild
+            build-mode: manual
           - language: actions
             build-mode: none
 
@@ -48,14 +50,14 @@ jobs:
           persist-credentials: false
 
       - name: Setup JDK
-        if: matrix.build-mode == 'autobuild'
+        if: matrix.build-mode == 'manual'
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Gradle
-        if: matrix.build-mode == 'autobuild'
+        if: matrix.build-mode == 'manual'
         uses: gradle/actions/setup-gradle@v6
 
       - name: Initialize CodeQL
@@ -63,6 +65,15 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+
+      # Without the build cache, so that javac runs and CodeQL sees every source file
+      - name: Build
+        if: matrix.build-mode == 'manual'
+        run: |
+          ./gradlew --no-daemon --no-build-cache \
+            :flowlayoutmanager:assembleDebug \
+            :flowlayoutmanager:compileDebugUnitTestJavaWithJavac \
+            :app:assembleDebug
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
