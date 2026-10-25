@@ -1,3 +1,21 @@
+// The Android Gradle Plugin pulls in vulnerable transitive dependencies on the build classpath:
+// force patched versions until AGP ships them itself.
+buildscript {
+    dependencies {
+        constraints {
+            classpath('org.apache.commons:commons-lang3:3.18.0') { because 'CVE-2025-48924' }
+            classpath('org.apache.commons:commons-compress:1.28.0') { because 'security fixes' }
+            classpath('org.apache.httpcomponents:httpclient:4.5.14') { because 'CVE-2020-13956' }
+            classpath('org.apache.httpcomponents:httpmime:4.5.14') { because 'aligned with httpclient' }
+            classpath('org.jdom:jdom2:2.0.6.1') { because 'CVE-2021-33813' }
+            classpath('org.bitbucket.b_c:jose4j:0.9.6') { because 'CVE-2024-29371' }
+            classpath('org.bouncycastle:bcprov-jdk18on:1.85') { because 'security fixes' }
+            classpath('org.bouncycastle:bcpkix-jdk18on:1.85') { because 'security fixes' }
+            classpath('org.bouncycastle:bcutil-jdk18on:1.85') { because 'security fixes' }
+        }
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
