@@ -1,0 +1,70 @@
+name: CodeQL
+
+# Advanced setup: the default setup scans Java without building it (build-mode none),
+# which cannot read the AndroidX AARs from Google Maven and leaves RecyclerView unresolved.
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '27 4 * * 3'
+  workflow_dispatch: # Allows manual trigger of the workflow
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Built with Gradle so that the AndroidX dependencies are resolved
+          - language: java-kotlin
+            build-mode: autobuild
+          - language: actions
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup JDK
+        if: matrix.build-mode == 'autobuild'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        if: matrix.build-mode == 'autobuild'
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
